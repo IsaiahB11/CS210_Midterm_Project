@@ -132,6 +132,301 @@ public:
                 insertLast(school);  // Insert each school at the end of the list
             }
         }
+
+   class SchoolBST {
+private:
+    struct Node {
+        School data;
+        Node* left;
+        Node* right;
+
+        Node(School school) : data(school), left(nullptr), right(nullptr) {}
+    };
+
+    Node* root = nullptr;
+
+    // insertion
+    Node* insert(Node* node, School school) {
+        if (node == nullptr) return new Node(school);
+
+        if (school.name < node->data.name)
+            node->left = insert(node->left, school);
+        else
+            node->right = insert(node->right, school);
+        return node;
+    }
+
+    // searching
+    Node* findByName(Node* node, string name) {
+        if (node == nullptr || node->data.name == name)
+            return node;
+        if (name < node->data.name)
+            return findByName(node->left, name);
+        else
+            return findByName(node->right, name);
+    }
+
+    // deletion
+    Node* deleteByName(Node* node, string name) {
+        if (node == nullptr) return nullptr;
+
+        if (name < node->data.name)
+            node->left = deleteByName(node->left, name);
+        else if (name > node->data.name)
+            node->right = deleteByName(node->right, name);
+        else {
+            // Case 1: No children
+            if (!node->left && !node->right) {
+                delete node;
+                return nullptr;
+            }
+            // Case 2: One child
+            if (!node->left) {
+                Node* temp = node->right;
+                delete node;
+                return temp;
+            }
+            if (!node->right) {
+                Node* temp = node->left;
+                delete node;
+                return temp;
+            }
+            // Case 3: Two children – get in-order successor (min value in right subtree)
+            Node* successor = getMin(node->right);
+            node->data = successor->data;
+            node->right = deleteByName(node->right, successor->data.name);
+        }
+        return node;
+    }
+
+    Node* getMin(Node* node) {
+        while (node->left != nullptr)
+            node = node->left;
+        return node;
+    }
+
+    // Traversals
+    void displayInOrder(Node* node) {
+        if (node) {
+            displayInOrder(node->left);
+            printSchool(node->data);
+            displayInOrder(node->right);
+        }
+    }
+
+    void displayPreOrder(Node* node) {
+        if (node) {
+            printSchool(node->data);
+            displayPreOrder(node->left);
+            displayPreOrder(node->right);
+        }
+    }
+
+    void displayPostOrder(Node* node) {
+        if (node) {
+            displayPostOrder(node->left);
+            displayPostOrder(node->right);
+            printSchool(node->data);
+        }
+    }
+
+    void printSchool(const School& school) {
+        cout << "School Name: " << school.name << endl;
+        cout << "Address: " << school.address << endl;
+        cout << "City: " << school.city << endl;
+        cout << "State: " << school.state << endl;
+        cout << "County: " << school.county << endl;
+        cout << "-----------------------------" << endl;
+    }
+
+public:
+    void insert(School school) {
+        root = insert(root, school);
+    }
+
+    void deleteByName(string name) {
+        root = deleteByName(root, name);
+    }
+
+    School* findByName(string name) {
+        Node* result = findByName(root, name);
+        return result ? &result->data : nullptr;
+    }
+
+    void displayInOrder() {
+        cout << "In-Order Traversal:\n";
+        displayInOrder(root);
+    }
+
+    void displayPreOrder() {
+        cout << "Pre-Order Traversal:\n";
+        displayPreOrder(root);
+    }
+
+    void displayPostOrder() {
+        cout << "Post-Order Traversal:\n";
+        displayPostOrder(root);
+    }
+
+    void loadCSV(const string& filename) {
+        ifstream file(filename);
+        string line;
+
+        while (getline(file, line)) {
+            stringstream ss(line);
+            School school;
+            getline(ss, school.name, ',');
+            getline(ss, school.address, ',');
+            getline(ss, school.city, ',');
+            getline(ss, school.state, ',');
+            getline(ss, school.county, ',');
+
+            insert(school);
+        }
+    }
+};
+        int tableSize = 100;
+        class SchoolHashTable {
+        private:
+            vector<SchoolList> table;
+
+            int hashFunction(const string& key) const {
+                int hash = 0;
+                for (char ch : key) {
+                    hash += ch;
+                }
+                return hash % tableSize;
+            }
+
+        public:
+            SchoolHashTable() {
+                table.resize(tableSize);
+                for (int i = 0; i < tableSize; ++i) {
+                    table[i].head = nullptr;
+                }
+            }
+
+            void insert(const School& school) {
+                int index = hashFunction(school.name);
+                table[index].insertFirst(school); // insertFirst = better performance than insertLast
+            }
+
+            void deleteByName(const string& name) {
+                int index = hashFunction(name);
+                table[index].deleteByName(name);
+            }
+
+            School* findByName(const string& name) {
+                int index = hashFunction(name);
+                return table[index].findByName(name);
+            }
+
+            void display() const {
+                for (int i = 0; i < tableSize; ++i) {
+                    cout << "Bucket " << i << ":\n";
+                    table[i].display();
+                }
+            }
+
+            void loadCSV(const string& filename) {
+                ifstream file(filename);
+                string line;
+
+                while (getline(file, line)) {
+                    stringstream ss(line);
+                    School school;
+                    getline(ss, school.name, ',');
+                    getline(ss, school.address, ',');
+                    getline(ss, school.city, ',');
+                    getline(ss, school.state, ',');
+                    getline(ss, school.county, ',');
+
+                    insert(school);
+                }
+            }
+        };
+    };
+
+int main() {
+    SchoolBST tree;
+    string filename = "schools.csv";
+
+    tree.loadCSV(filename);
+
+    // Display BST using different traversal methods
+    tree.displayInOrder();
+    tree.displayPreOrder();
+    tree.displayPostOrder();
+
+    // Search for a school
+    string searchName;
+    cout << "Enter school name to search: ";
+    getline(cin, searchName);
+    School* found = tree.findByName(searchName);
+    if (found) {
+        cout << "School Found:\n";
+        cout << "Name: " << found->name << "\n";
+        cout << "Address: " << found->address << "\n";
+        cout << "City: " << found->city << "\n";
+        cout << "State: " << found->state << "\n";
+        cout << "County: " << found->county << "\n";
+    } else {
+        cout << "School not found.\n";
+    }
+
+    // Delete a school
+    string deleteName;
+    cout << "Enter school name to delete: ";
+    getline(cin, deleteName);
+    tree.deleteByName(deleteName);
+
+    // Show updated BST
+    cout << "Updated BST (In-Order):\n";
+    tree.displayInOrder();
+
+    return 0;
+}
+
+    int main() {
+        SchoolHashTable table;
+        string filename = "schools.csv";
+
+        // Load schools into hash table
+        table.loadCSV(filename);
+
+        // Display table
+        cout << "All schools in hash table:\n";
+        table.display();
+
+        // Search
+        string searchName;
+        cout << "Enter the name of the school to search: ";
+        getline(cin, searchName);
+        School* found = table.findByName(searchName);
+        if (found) {
+            cout << "School found:\n";
+            cout << "Name: " << found->name << "\n";
+            cout << "Address: " << found->address << "\n";
+            cout << "City: " << found->city << "\n";
+            cout << "State: " << found->state << "\n";
+            cout << "County: " << found->county << "\n";
+        } else {
+            cout << "School not found.\n";
+        }
+
+        // Delete
+        string deleteName;
+        cout << "Enter the name of the school to delete: ";
+        getline(cin, deleteName);
+        table.deleteByName(deleteName);
+
+        // Display after deletion
+        cout << "Updated schools in hash table:\n";
+        table.display();
+
+        return 0;
+    }
+
         int main()
         {
             SchoolList list;
@@ -159,7 +454,7 @@ public:
                 cout << "School not found." << endl;
             }
 
-            
+
             string deleteName;
             cout << "Enter the name of the school to delete: ";
             getline(cin, deleteName);
